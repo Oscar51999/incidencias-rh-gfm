@@ -1,0 +1,445 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Panel RH · Incidencias · Grupo Firme</title>
+<meta name="robots" content="noindex">
+<link rel="icon" href="panel.ico">
+<meta name="theme-color" content="#002060">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Source+Sans+3:ital,wght@0,400;0,600;0,700;0,800;1,400&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="inc.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js" defer></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js" defer></script>
+<script src="inc-core.js"></script>
+<style>
+body{background:#f3f5f9}
+.top{background:var(--navy);color:#fff;position:sticky;top:0;z-index:20}
+.top-in{max-width:1320px;margin:auto;display:flex;align-items:center;gap:18px;padding:10px 20px}
+.top img{height:34px;width:auto}
+.top h1{margin:0;font-size:16px;font-weight:700;letter-spacing:.03em;border-left:1px solid rgba(255,255,255,.3);padding-left:16px;line-height:1.15}
+.top h1 small{display:block;font-weight:400;opacity:.75;font-size:11.5px;letter-spacing:.04em}
+.top .u{margin-left:auto;display:flex;gap:12px;align-items:center;font-size:13.5px}
+.top .u button{background:transparent;border:1px solid rgba(255,255,255,.45);color:#fff;padding:5px 12px;border-radius:4px;cursor:pointer}
+.top .u button:hover{background:rgba(255,255,255,.12)}
+.sync{width:8px;height:8px;border-radius:50%;background:#5fd38a;display:inline-block}
+.sync.off{background:#f0a531}
+.wrap{max-width:1320px;margin:auto;padding:20px}
+
+.kpis{display:grid;grid-template-columns:repeat(5,1fr);gap:12px}
+.kpi{background:#fff;border:1px solid var(--line-2);border-top:3px solid var(--navy);padding:12px 14px;cursor:pointer;text-align:left;transition:box-shadow .15s,transform .1s}
+.kpi:hover{box-shadow:0 6px 18px -10px rgba(0,32,96,.45)}
+.kpi.act{outline:2px solid var(--navy);outline-offset:-1px}
+.kpi small{display:block;font-size:11.5px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--ink-2)}
+.kpi strong{display:block;font-size:30px;font-weight:800;line-height:1.1;margin-top:4px;font-variant-numeric:tabular-nums}
+.kpi em{font-style:normal;font-size:12px;color:var(--ink-3)}
+.kpi.k-pend{border-top-color:#d89a1d}.kpi.k-aut{border-top-color:var(--navy)}.kpi.k-reg{border-top-color:var(--ok)}.kpi.k-rech{border-top-color:var(--bad)}.kpi.k-hoy{border-top-color:var(--gold)}
+
+.tools{display:flex;flex-wrap:wrap;gap:10px;align-items:end;margin:18px 0 12px;background:#fff;border:1px solid var(--line-2);padding:12px}
+.tools label{display:flex;flex-direction:column;font-size:11px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--ink-2);gap:3px}
+.tools .inp{border:1px solid var(--line);border-radius:4px;padding:6px 8px;min-height:34px;font-size:14px;background:#fff}
+.tools .inp:focus{border-color:var(--navy)}
+.tools .grow{flex:1 1 220px}
+.tools label:not(.grow) .inp{max-width:230px}
+.tools .sp{margin-left:auto;display:flex;gap:8px}
+
+.tbl-wrap{background:#fff;border:1px solid var(--line-2);overflow:auto}
+table{width:100%;border-collapse:collapse;font-size:14px}
+th{position:sticky;top:0;background:var(--navy-50);color:var(--navy);text-align:left;font-size:11.5px;letter-spacing:.05em;text-transform:uppercase;padding:9px 10px;border-bottom:1.5px solid var(--navy-100);white-space:nowrap;cursor:pointer;user-select:none}
+th.nosort{cursor:default}
+th .ar{opacity:.5;font-size:10px}
+td{padding:9px 10px;border-bottom:1px solid var(--line-2);vertical-align:top}
+tr:hover td{background:#f8f9fc}
+tr.fila{cursor:pointer}
+td .sub{display:block;font-size:12px;color:var(--ink-3)}
+td.fol{font-weight:800;font-variant-numeric:tabular-nums;white-space:nowrap;color:var(--navy)}
+td.num{font-variant-numeric:tabular-nums;white-space:nowrap}
+td.acc{white-space:nowrap;text-align:right}
+.ib{border:1px solid var(--line);background:#fff;border-radius:4px;padding:4px 9px;cursor:pointer;font-size:12.5px;color:var(--navy);font-weight:700}
+.ib:hover{border-color:var(--navy);background:var(--navy-50)}
+.empty{padding:50px 20px;text-align:center;color:var(--ink-3)}
+.cnt{font-size:13px;color:var(--ink-3);margin:8px 2px}
+.badge-cat{display:inline-flex;align-items:center;gap:6px}
+.badge-cat img{height:18px;width:auto}
+
+/* Detalle */
+.ov{position:fixed;inset:0;background:rgba(10,20,45,.45);z-index:40;display:flex;justify-content:flex-end}
+.drawer{background:#fff;width:min(820px,100%);height:100%;overflow:auto;box-shadow:-10px 0 40px rgba(0,0,0,.25);animation:sl .18s ease-out}
+@keyframes sl{from{transform:translateX(30px);opacity:.5}}
+.dh{position:sticky;top:0;background:#fff;border-bottom:1px solid var(--line-2);padding:14px 20px;display:flex;align-items:center;gap:12px;z-index:2}
+.dh h2{margin:0;font-size:20px;color:var(--navy);font-variant-numeric:tabular-nums}
+.dh .x{margin-left:auto;border:0;background:none;font-size:28px;line-height:1;cursor:pointer;color:var(--ink-3)}
+.db{padding:18px 20px 30px;display:grid;gap:18px}
+.firmas{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.fb{border:1px solid var(--ink);padding:10px;text-align:center;font-size:12px}
+.fb h5{margin:0;color:var(--navy);font-size:12.5px;letter-spacing:.04em}
+.fb .img{height:64px;display:grid;place-items:center;border-bottom:1px solid var(--ink);margin:6px 0 4px}
+.fb .img img{max-height:60px;max-width:100%}
+.fb .img .stamp{font-weight:800;letter-spacing:.06em}
+.fb b{display:block;font-size:12.5px}
+.fb span{color:var(--ink-3);font-size:11.5px}
+.panel-acc{border:1.5px solid var(--navy);padding:14px;background:var(--navy-50);display:grid;gap:10px}
+.panel-acc h4{margin:0;color:var(--navy);font-size:14px;letter-spacing:.03em}
+.panel-acc .row-b{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.panel-acc textarea,.panel-acc input,.panel-acc select{border:1px solid var(--line);border-radius:4px;padding:8px;background:#fff;width:100%}
+.hist{list-style:none;margin:0;padding:0;border-left:2px solid var(--navy-100);margin-left:6px}
+.hist li{position:relative;padding:0 0 12px 16px;font-size:13.5px}
+.hist li::before{content:"";position:absolute;left:-6px;top:5px;width:10px;height:10px;border-radius:50%;background:var(--navy)}
+.hist small{display:block;color:var(--ink-3);font-size:12px}
+.lbl{font-size:11.5px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--ink-2);margin-bottom:6px}
+.notas{width:100%;min-height:80px;border:1px solid var(--line);border-radius:4px;padding:8px;resize:vertical}
+.saved{font-size:12px;color:var(--ok);margin-left:8px}
+
+/* Login */
+.login{min-height:100vh;display:grid;place-items:center;background:linear-gradient(160deg,#002060 0%,#0a2f7a 55%,#eef1f6 55.1%)}
+.lcard{background:#fff;width:min(380px,92vw);padding:30px 28px;box-shadow:0 20px 60px -20px rgba(0,20,60,.5)}
+.lcard img{width:170px;display:block;margin:0 auto 10px}
+.lcard h2{text-align:center;margin:0 0 4px;color:var(--navy);font-size:18px}
+.lcard p{text-align:center;margin:0 0 18px;color:var(--ink-3);font-size:13px}
+.lcard .fields{gap:14px}
+.lcard .btn{width:100%;margin-top:18px}
+.lcard .msg{color:var(--bad);font-size:13px;min-height:18px;margin-top:8px;text-align:center}
+
+@media (max-width:1000px){.kpis{grid-template-columns:repeat(3,1fr)}}
+@media (max-width:640px){.kpis{grid-template-columns:1fr 1fr}.firmas{grid-template-columns:1fr}.top h1{display:none}.hide-sm{display:none}}
+@media print{.top,.tools,.kpis,.acc{display:none}}
+</style>
+</head>
+<body>
+
+<div id="vLogin" class="login hidden">
+  <form class="lcard" id="fLogin">
+    <img src="logo-firme.png" alt="Grupo Empresarial Firme">
+    <h2>Panel de Recursos Humanos</h2>
+    <p>Permisos e incidencias · FO-GR-08</p>
+    <div class="fields">
+      <label class="f"><span>Usuario</span><input class="inp" id="lu" autocomplete="username" required></label>
+      <label class="f"><span>Contraseña</span><input class="inp" id="lp" type="password" autocomplete="current-password" required></label>
+    </div>
+    <button class="btn" id="lb">Entrar</button>
+    <div class="msg" id="lmsg"></div>
+  </form>
+</div>
+
+<div id="vApp" class="hidden">
+  <header class="top"><div class="top-in">
+    <img src="logo-firme-blanco.png" alt="Grupo Empresarial Firme">
+    <h1>Panel de Recursos Humanos<small>SOLICITUD DE PERMISOS E INCIDENCIAS</small></h1>
+    <div class="u"><span class="sync" id="sync" title="Sincronizado"></span><span id="uName"></span><button id="bSalir">Salir</button></div>
+  </div></header>
+
+  <div class="wrap">
+    <div class="kpis" id="kpis"></div>
+
+    <div class="tools">
+      <label class="grow">Buscar<input class="inp" id="fq" placeholder="Folio, nombre, área, jefe, motivo…"></label>
+      <label>Estado<select class="inp" id="fEst"><option value="">Todos</option></select></label>
+      <label>Tipo<select class="inp" id="fCat"><option value="">Todos</option></select></label>
+      <label>Empresa<select class="inp" id="fEmp"><option value="">Todas</option></select></label>
+      <label>Inicio desde<input class="inp" type="date" id="fDe"></label>
+      <label>hasta<input class="inp" type="date" id="fA"></label>
+      <div class="sp">
+        <button class="btn ghost sm" id="bLimpiar" type="button">Limpiar</button>
+        <button class="btn sm" id="bExcel" type="button">Exportar Excel</button>
+      </div>
+    </div>
+
+    <div class="tbl-wrap">
+      <table>
+        <thead><tr>
+          <th data-k="folio">Folio <span class="ar"></span></th>
+          <th data-k="nombre">Colaborador <span class="ar"></span></th>
+          <th data-k="empresa" class="hide-sm">Empresa <span class="ar"></span></th>
+          <th data-k="tipo">Incidencia <span class="ar"></span></th>
+          <th data-k="fechaInicio">Periodo <span class="ar"></span></th>
+          <th data-k="totalDiasHoras" class="hide-sm">Total <span class="ar"></span></th>
+          <th data-k="estado">Estado <span class="ar"></span></th>
+          <th class="nosort"></th>
+        </tr></thead>
+        <tbody id="tb"></tbody>
+      </table>
+      <div class="empty hidden" id="empty">No hay solicitudes con estos filtros.</div>
+    </div>
+    <div class="cnt" id="cnt"></div>
+  </div>
+</div>
+
+<div class="ov hidden" id="ov"><aside class="drawer" role="dialog" aria-modal="true" aria-labelledby="dFolio">
+  <div class="dh"><h2 id="dFolio">—</h2><span class="st" id="dEst"></span>
+    <button class="btn ghost sm" id="dPdf" type="button">⬇ PDF</button>
+    <button class="x" id="dX" aria-label="Cerrar">×</button></div>
+  <div class="db">
+    <div id="dAcc"></div>
+    <div id="dVista"></div>
+    <div><div class="lbl">6.- Autorizaciones</div><div class="firmas" id="dFirmas"></div></div>
+    <div><div class="lbl">Notas internas de RH <span class="saved hidden" id="dSaved">Guardado</span></div><textarea class="notas" id="dNotas" placeholder="Solo visibles para RH…"></textarea></div>
+    <div><div class="lbl">Historial</div><ul class="hist" id="dHist"></ul></div>
+    <div id="dCarpeta"></div>
+  </div>
+</aside></div>
+
+<script>
+(function () {
+  var $ = function (id) { return document.getElementById(id); };
+  var SK = 'inc_gfm_panel';
+  var ses = null, todas = [], abierto = null, kpiFiltro = '', orden = { k: 'folio', d: -1 }, timer = null, cargando = false;
+  try { ses = JSON.parse(sessionStorage.getItem(SK) || 'null'); } catch (e) {}
+
+  function toast(t) { var d = document.createElement('div'); d.className = 'toast'; d.textContent = t; document.body.appendChild(d); setTimeout(function () { d.remove(); }, 3000); }
+  function api(d) {
+    d.sesion = ses && ses.token;
+    return INC.api(d).then(function (r) { if (r && r.error === 'SESION') { salir('Tu sesión expiró. Vuelve a entrar.'); throw new Error('SESION'); } return r; });
+  }
+
+  /* ---------- Login ---------- */
+  function verLogin(msg) { $('vApp').classList.add('hidden'); $('vLogin').classList.remove('hidden'); $('lmsg').textContent = msg || ''; $('lu').focus(); }
+  function salir(msg) { ses = null; sessionStorage.removeItem(SK); clearInterval(timer); cerrar(); verLogin(msg); }
+  $('fLogin').onsubmit = function (e) {
+    e.preventDefault();
+    var b = $('lb'); b.disabled = true; b.innerHTML = '<i class="spin"></i>'; $('lmsg').textContent = '';
+    INC.api({ accion: 'login', usuario: $('lu').value, password: $('lp').value }).then(function (r) {
+      if (!r.ok) { $('lmsg').textContent = r.error || 'No se pudo entrar'; return; }
+      ses = { token: r.token, usuario: r.usuario }; sessionStorage.setItem(SK, JSON.stringify(ses)); $('lp').value = ''; iniciar();
+    }).catch(function () { $('lmsg').textContent = 'Sin conexión con el servidor'; })
+      .finally(function () { b.disabled = false; b.textContent = 'Entrar'; });
+  };
+  $('bSalir').onclick = function () { salir(); };
+
+  /* ---------- Datos ---------- */
+  function cargar() {
+    if (cargando) return; cargando = true;
+    return api({ accion: 'listar' }).then(function (r) {
+      $('sync').classList.remove('off');
+      if (!r.ok) throw new Error(r.error);
+      todas = r.solicitudes || [];
+      llenarFiltros(); pintar();
+      if (abierto) { var s = buscar(abierto); if (s) detalle(s, true); }
+    }).catch(function (e) { if (e.message !== 'SESION') $('sync').classList.add('off'); })
+      .finally(function () { cargando = false; });
+  }
+  function buscar(f) { return todas.filter(function (s) { return s.folio === f; })[0]; }
+  function iniciar() {
+    $('vLogin').classList.add('hidden'); $('vApp').classList.remove('hidden'); $('uName').textContent = ses.usuario;
+    cargar(); clearInterval(timer); timer = setInterval(function () { if (!document.hidden) cargar(); }, 20000);
+  }
+
+  Object.keys(INC.ESTADOS).forEach(function (k) { var o = document.createElement('option'); o.value = k; o.textContent = INC.ESTADOS[k].txt; $('fEst').appendChild(o); });
+  INC.CATEGORIAS.forEach(function (c) { var o = document.createElement('option'); o.value = c.id; o.textContent = c.id; $('fCat').appendChild(o); });
+  function llenarFiltros() {
+    var sel = $('fEmp'), v = sel.value, emp = {};
+    INC.EMPRESAS.concat(todas.map(function (s) { return s.empresa; })).forEach(function (e) { if (e) emp[e] = 1; });
+    sel.innerHTML = '<option value="">Todas</option>' + Object.keys(emp).sort().map(function (e) { return '<option>' + INC.esc(e) + '</option>'; }).join('');
+    sel.value = v;
+  }
+
+  /* ---------- KPIs ---------- */
+  function enCurso(s, hoy) {
+    if (['autorizada_jefe', 'registrada'].indexOf(s.estado) < 0) return false;
+    var a = String(s.fechaInicio).slice(0, 10), b = String(s.fechaFin || s.fechaInicio).slice(0, 10);
+    return a <= hoy && hoy <= b;
+  }
+  function kpis() {
+    var hoy = INC.hoy(), mes = hoy.slice(0, 7);
+    var c = function (fn) { return todas.filter(fn).length; };
+    var K = [
+      { id: 'pendiente_jefe', cls: 'k-pend', t: 'Pendientes del jefe', n: c(function (s) { return s.estado === 'pendiente_jefe'; }), e: 'esperando autorización' },
+      { id: 'autorizada_jefe', cls: 'k-aut', t: 'Por registrar', n: c(function (s) { return s.estado === 'autorizada_jefe'; }), e: 'autorizadas por el jefe' },
+      { id: 'registrada_mes', cls: 'k-reg', t: 'Registradas', n: c(function (s) { return s.estado === 'registrada' && String(s.rhFecha).slice(0, 7) === mes; }), e: 'este mes' },
+      { id: 'rechazadas', cls: 'k-rech', t: 'Rechazadas', n: c(function (s) { return s.estado === 'rechazada_jefe'; }), e: 'por el jefe directo' },
+      { id: 'hoy', cls: 'k-hoy', t: 'Fuera hoy', n: c(function (s) { return enCurso(s, hoy); }), e: 'incidencias en curso' }
+    ];
+    $('kpis').innerHTML = K.map(function (k) {
+      return '<button class="kpi ' + k.cls + (kpiFiltro === k.id ? ' act' : '') + '" data-k="' + k.id + '"><small>' + k.t + '</small><strong>' + k.n + '</strong><em>' + k.e + '</em></button>';
+    }).join('');
+  }
+  $('kpis').onclick = function (e) {
+    var b = e.target.closest('.kpi'); if (!b) return;
+    kpiFiltro = kpiFiltro === b.dataset.k ? '' : b.dataset.k;
+    if (kpiFiltro) $('fEst').value = '';
+    pintar();
+  };
+
+  /* ---------- Tabla ---------- */
+  function filtradas() {
+    var q = $('fq').value.trim().toLowerCase(), est = $('fEst').value, cat = $('fCat').value, emp = $('fEmp').value, de = $('fDe').value, a = $('fA').value;
+    var hoy = INC.hoy(), mes = hoy.slice(0, 7);
+    return todas.filter(function (s) {
+      if (kpiFiltro === 'registrada_mes' && !(s.estado === 'registrada' && String(s.rhFecha).slice(0, 7) === mes)) return false;
+      if (kpiFiltro === 'rechazadas' && s.estado !== 'rechazada_jefe') return false;
+      if (kpiFiltro === 'hoy' && !enCurso(s, hoy)) return false;
+      if ((kpiFiltro === 'pendiente_jefe' || kpiFiltro === 'autorizada_jefe') && s.estado !== kpiFiltro) return false;
+      if (est && s.estado !== est) return false;
+      if (cat && s.categoria !== cat) return false;
+      if (emp && s.empresa !== emp) return false;
+      var fi = String(s.fechaInicio).slice(0, 10);
+      if (de && fi < de) return false;
+      if (a && fi > a) return false;
+      if (q) {
+        var h = [s.folio, s.nombre, s.puesto, s.area, s.empresa, s.jefeNombre, s.tipo, s.categoria, s.motivo, s.especificar, s.correo].join(' ').toLowerCase();
+        if (h.indexOf(q) < 0) return false;
+      }
+      return true;
+    }).sort(function (x, y) {
+      var a1 = String(x[orden.k] || ''), b1 = String(y[orden.k] || '');
+      return a1 < b1 ? -orden.d : a1 > b1 ? orden.d : 0;
+    });
+  }
+  function periodo(s) {
+    var a = INC.fecha(s.fechaInicio), b = s.fechaFin && s.fechaFin !== s.fechaInicio ? INC.fecha(s.fechaFin) : '';
+    var h = s.horaInicio ? s.horaInicio + (s.horaFin ? '–' + s.horaFin : '') : '';
+    return a + (b ? ' → ' + b : '') + (h ? '<span class="sub">' + h + '</span>' : '');
+  }
+  function pintar() {
+    kpis();
+    var L = filtradas(), e = INC.esc;
+    var ic = {}; INC.CATEGORIAS.forEach(function (c) { ic[c.id] = c.icono; });
+    $('tb').innerHTML = L.map(function (s) {
+      var st = INC.ESTADOS[s.estado] || { txt: s.estado, cls: '' };
+      return '<tr class="fila" data-f="' + e(s.folio) + '">' +
+        '<td class="fol">' + e(s.folio) + '<span class="sub">' + INC.fecha(s.fechaRegistro) + '</span></td>' +
+        '<td><b>' + e(s.nombre) + '</b><span class="sub">' + e(s.puesto) + ' · ' + e(s.area) + '</span></td>' +
+        '<td class="hide-sm"><span class="sub" style="color:var(--ink-2)">' + e(s.empresa) + '</span></td>' +
+        '<td><span class="badge-cat">' + (ic[s.categoria] ? '<img src="' + ic[s.categoria] + '" alt="">' : '') + '<span>' + e(s.tipo) + (s.especificar ? ': ' + e(s.especificar) : '') + '<span class="sub">' + e(s.categoria) + '</span></span></span></td>' +
+        '<td class="num">' + periodo(s) + '</td>' +
+        '<td class="num hide-sm">' + e(s.totalDiasHoras || '') + '</td>' +
+        '<td><span class="st ' + st.cls + '">' + st.txt + '</span></td>' +
+        '<td class="acc"><button class="ib" data-pdf="' + e(s.folio) + '" title="Descargar formato">PDF</button></td></tr>';
+    }).join('');
+    $('empty').classList.toggle('hidden', L.length > 0);
+    $('cnt').textContent = L.length + ' de ' + todas.length + ' solicitudes';
+    document.querySelectorAll('th[data-k]').forEach(function (th) { th.querySelector('.ar').textContent = th.dataset.k === orden.k ? (orden.d > 0 ? '▲' : '▼') : ''; });
+  }
+  ['fq', 'fEst', 'fCat', 'fEmp', 'fDe', 'fA'].forEach(function (id) { $(id).addEventListener('input', function () { if (id === 'fEst') kpiFiltro = ''; pintar(); }); });
+  $('bLimpiar').onclick = function () { ['fq', 'fEst', 'fCat', 'fEmp', 'fDe', 'fA'].forEach(function (id) { $(id).value = ''; }); kpiFiltro = ''; pintar(); };
+  document.querySelectorAll('th[data-k]').forEach(function (th) {
+    th.onclick = function () { orden = { k: th.dataset.k, d: orden.k === th.dataset.k ? -orden.d : 1 }; pintar(); };
+  });
+  $('tb').onclick = function (e) {
+    var p = e.target.closest('[data-pdf]');
+    if (p) { e.stopPropagation(); INC.descargarPDF(buscar(p.dataset.pdf)); return; }
+    var r = e.target.closest('tr[data-f]'); if (r) detalle(buscar(r.dataset.f));
+  };
+
+  /* ---------- Detalle ---------- */
+  function cerrar() { abierto = null; $('ov').classList.add('hidden'); document.body.style.overflow = ''; }
+  $('dX').onclick = cerrar;
+  $('ov').onclick = function (e) { if (e.target === $('ov')) cerrar(); };
+  document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && abierto) cerrar(); });
+  $('dPdf').onclick = function () { INC.descargarPDF(buscar(abierto)); };
+
+  function firmaBox(t, img, stamp, nombre, pie, fecha) {
+    return '<div class="fb"><h5>' + t + '</h5><div class="img">' + (img ? '<img src="' + img + '" alt="Firma">' : stamp || '') + '</div><b>' + INC.esc(nombre || '—') + '</b><span>' + pie + (fecha ? ' · ' + INC.fechaHora(fecha) : '') + '</span></div>';
+  }
+
+  function detalle(s, refresco) {
+    if (!s) return;
+    var cambio = abierto !== s.folio; abierto = s.folio;
+    $('ov').classList.remove('hidden'); document.body.style.overflow = 'hidden';
+    var st = INC.ESTADOS[s.estado] || { txt: s.estado, cls: '' };
+    $('dFolio').textContent = s.folio; $('dEst').className = 'st ' + st.cls; $('dEst').textContent = st.txt;
+    $('dVista').innerHTML = INC.vista(s);
+    $('dFirmas').innerHTML =
+      firmaBox('COLABORADOR', s.firmaColaborador, '', s.nombre, 'Firma del colaborador', s.fechaRegistro) +
+      firmaBox('JEFE DIRECTO', s.jefeFirma, s.jefeDecision === 'RECHAZADA' ? '<span class="stamp" style="color:var(--bad)">RECHAZADA</span>' : '<span style="color:var(--ink-3)">Pendiente</span>', s.jefeNombreFirma || s.jefeNombre, s.jefeDecision ? (s.jefeDecision === 'AUTORIZADA' ? 'Autorizó' : 'Rechazó') : 'Jefe directo', s.jefeFecha) +
+      firmaBox('RECURSOS HUMANOS', '', s.rhUsuario ? '<span class="stamp" style="color:var(--navy)">RECIBIDO Y REGISTRADO</span>' : '<span style="color:var(--ink-3)">Pendiente</span>', s.rhUsuario, 'Nombre y firma de RH', s.rhFecha);
+    $('dHist').innerHTML = (s.historial || []).slice().reverse().map(function (h) {
+      return '<li>' + INC.esc(h.evento) + '<small>' + INC.fechaHora(h.fecha) + (h.por ? ' · ' + INC.esc(h.por) : '') + '</small></li>';
+    }).join('');
+    $('dCarpeta').innerHTML = s.carpetaUrl ? '<a class="adj" href="' + INC.esc(s.carpetaUrl) + '" target="_blank" rel="noopener">📁 Abrir carpeta del folio en Drive</a>' : '';
+    if (cambio || document.activeElement !== $('dNotas')) $('dNotas').value = s.notasRH || '';
+    if (!refresco || cambio) acciones(s);
+    else if ($('dAcc').dataset.estado !== s.estado) acciones(s);
+  }
+
+  function acciones(s) {
+    var h = '', e = INC.esc;
+    $('dAcc').dataset.estado = s.estado;
+    if (s.estado === 'autorizada_jefe') {
+      h = '<div class="panel-acc"><h4>Recibido y registrado</h4><textarea id="aCom" rows="2" placeholder="Comentario para el colaborador (opcional)"></textarea>' +
+        '<div class="row-b"><button class="btn ok" id="aReg">Marcar como recibido y registrado</button><button class="btn bad sm" data-est="cancelada">Cancelar solicitud</button></div></div>';
+    } else if (s.estado === 'pendiente_jefe') {
+      h = '<div class="panel-acc"><h4>Esperando al jefe directo</h4><div class="row-b" style="font-size:13.5px">La liga se envió a <b>' + e(s.jefeCorreo) + '</b>.</div>' +
+        '<div class="row-b"><input id="aCorreo" type="email" placeholder="Correo del jefe (si cambió)" style="max-width:280px">' +
+        '<button class="btn ghost sm" id="aReenv">Reenviar liga</button></div>' +
+        '<textarea id="aCom" rows="2" placeholder="Motivo (obligatorio para registrar sin la firma del jefe o cancelar)"></textarea>' +
+        '<div class="row-b"><button class="btn sm" id="aForzar">Registrar sin liga del jefe</button><button class="btn bad sm" data-est="cancelada">Cancelar solicitud</button></div></div>';
+    } else {
+      var opts = Object.keys(INC.ESTADOS).filter(function (k) { return k !== s.estado && k !== 'registrada' && k !== 'rechazada_jefe'; });
+      h = '<div class="panel-acc"><h4>Corregir estado</h4><div class="row-b"><select id="aNuevo" style="max-width:260px">' +
+        opts.map(function (k) { return '<option value="' + k + '">' + INC.ESTADOS[k].txt + '</option>'; }).join('') +
+        '</select></div><textarea id="aCom" rows="2" placeholder="Motivo del cambio (obligatorio)"></textarea>' +
+        '<div class="row-b"><button class="btn ghost sm" id="aCambiar">Cambiar estado</button><span class="hint">Si regresa a "Pendiente del jefe" se le reenvía la liga.</span></div></div>';
+    }
+    $('dAcc').innerHTML = h;
+  }
+
+  function ejecutar(btn, datos, ok) {
+    var t = btn.textContent; btn.disabled = true; btn.innerHTML = '<i class="spin"></i>';
+    datos.folio = abierto;
+    return api(datos).then(function (r) {
+      if (!r.ok) { toast(r.error || 'No se pudo guardar'); return; }
+      if (r.solicitud) { var i = todas.findIndex(function (x) { return x.folio === r.solicitud.folio; }); if (i >= 0) todas[i] = r.solicitud; detalle(r.solicitud); acciones(r.solicitud); pintar(); }
+      toast(ok);
+    }).catch(function (e) { if (e.message !== 'SESION') toast('Sin conexión'); })
+      .finally(function () { btn.disabled = false; btn.textContent = t; });
+  }
+  $('dAcc').onclick = function (e) {
+    var b = e.target.closest('button'); if (!b) return;
+    var com = ($('aCom') && $('aCom').value.trim()) || '';
+    if (b.id === 'aReg') ejecutar(b, { accion: 'registrar', comentario: com }, 'Registrada');
+    else if (b.id === 'aForzar') {
+      if (!com) { toast('Escribe el motivo'); $('aCom').focus(); return; }
+      if (confirm('¿Registrar sin la autorización del jefe por liga?')) ejecutar(b, { accion: 'registrar', comentario: com, forzar: true }, 'Registrada');
+    } else if (b.id === 'aReenv') {
+      var c = $('aCorreo').value.trim();
+      if (c && !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(c)) { toast('Correo no válido'); return; }
+      ejecutar(b, { accion: 'reenviarJefe', jefeCorreo: c }, 'Liga reenviada');
+    } else if (b.dataset.est === 'cancelada') {
+      if (!com) { toast('Escribe el motivo de la cancelación'); $('aCom').focus(); return; }
+      if (confirm('¿Cancelar la solicitud ' + abierto + '? Se avisa al colaborador.')) ejecutar(b, { accion: 'cambiarEstado', estado: 'cancelada', comentario: com }, 'Cancelada');
+    } else if (b.id === 'aCambiar') {
+      if (!com) { toast('Escribe el motivo del cambio'); $('aCom').focus(); return; }
+      ejecutar(b, { accion: 'cambiarEstado', estado: $('aNuevo').value, comentario: com }, 'Estado actualizado');
+    }
+  };
+
+  var tNotas = null;
+  $('dNotas').addEventListener('input', function () {
+    clearTimeout(tNotas); var f = abierto, v = this.value;
+    tNotas = setTimeout(function () {
+      api({ accion: 'notas', folio: f, notas: v }).then(function (r) {
+        if (r.ok) { var s = buscar(f); if (s) s.notasRH = v; $('dSaved').classList.remove('hidden'); setTimeout(function () { $('dSaved').classList.add('hidden'); }, 1500); }
+      }).catch(function () {});
+    }, 900);
+  });
+
+  /* ---------- Excel ---------- */
+  $('bExcel').onclick = function () {
+    var L = filtradas();
+    if (!L.length) { toast('No hay solicitudes para exportar'); return; }
+    var filas = L.map(function (s) {
+      return {
+        'Folio': s.folio, 'Estado': (INC.ESTADOS[s.estado] || {}).txt || s.estado, 'Fecha de registro': INC.fechaHora(s.fechaRegistro),
+        'Empresa': s.empresa, 'Colaborador': s.nombre, 'Puesto': s.puesto, 'Área / Departamento': s.area, 'Fecha de ingreso': INC.fecha(s.fechaIngreso), 'Correo': s.correo,
+        'Tipo de incidencia': s.categoria, 'Opción': s.tipo, 'Especificar': s.especificar,
+        'Fecha de inicio': INC.fecha(s.fechaInicio), 'Hora de inicio': s.horaInicio, 'Fecha de fin': INC.fecha(s.fechaFin), 'Hora de fin': s.horaFin,
+        'Reincorporación': INC.fecha(s.fechaReincorporacion), 'Total días u horas': s.totalDiasHoras, 'Días de vacaciones': s.vacDias,
+        'Motivo': s.motivo, 'Justificación': s.categoria === 'VACACIONES' ? 'NO APLICA' : s.justificacion, 'Justificación (otro)': s.justificacionOtro,
+        'Soporte adjunto': (s.adjuntos || []).length,
+        'Jefe directo': s.jefeNombre, 'Correo jefe': s.jefeCorreo, 'Decisión jefe': s.jefeDecision, 'Fecha decisión': INC.fechaHora(s.jefeFecha), 'Comentario jefe': s.jefeComentario,
+        'Registró RH': s.rhUsuario, 'Fecha registro RH': INC.fechaHora(s.rhFecha), 'Comentario RH': s.rhComentario, 'Notas internas RH': s.notasRH
+      };
+    });
+    var ws = XLSX.utils.json_to_sheet(filas);
+    ws['!cols'] = Object.keys(filas[0]).map(function (k) { return { wch: Math.min(40, Math.max(k.length + 2, 12)) }; });
+    ws['!autofilter'] = { ref: ws['!ref'] };
+    var wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, 'Incidencias');
+    XLSX.writeFile(wb, 'Incidencias_RH_' + INC.hoy() + '.xlsx');
+  };
+
+  if (ses && ses.token) iniciar(); else verLogin();
+})();
+</script>
+</body>
+</html>

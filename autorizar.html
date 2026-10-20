@@ -1,0 +1,151 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Autorizar incidencia · Grupo Firme</title>
+<meta name="robots" content="noindex">
+<link rel="icon" href="favicon.ico">
+<meta name="theme-color" content="#002060">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Source+Sans+3:ital,wght@0,400;0,600;0,700;0,800;1,400&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="inc.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js" defer></script>
+<script src="inc-core.js"></script>
+<style>
+.status{display:flex;align-items:center;gap:12px;justify-content:space-between;flex-wrap:wrap;margin-bottom:14px}
+.status .who{font-size:14px;color:var(--ink-2)}
+.decide{display:grid;grid-template-columns:1.2fr 1fr;gap:18px}
+.decide .pad{height:130px}
+.res{padding:26px 18px;text-align:center}
+.res h2{margin:0 0 6px;font-size:22px}
+.res.ok h2{color:var(--ok)} .res.bad h2{color:var(--bad)}
+.load{padding:60px 0;text-align:center;color:var(--ink-3)}
+@media (max-width:720px){.decide{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<main class="sheet"><div class="sheet-in">
+  <header class="doc-head">
+    <img class="logo" src="logo-firme.png" alt="Grupo Empresarial Firme">
+    <div class="doc-title">
+      <h1>SOLICITUD DE PERMISOS E INCIDENCIAS</h1>
+      <p>Autorización del jefe directo</p>
+    </div>
+    <div class="date-box"><small>FOLIO</small><strong id="folio">—</strong><em id="fsol">&nbsp;</em></div>
+  </header>
+
+  <div id="cargando" class="load">Cargando solicitud…</div>
+  <div id="error" class="res bad hidden"><h2>Liga no válida</h2><p id="errTxt"></p></div>
+
+  <div id="cuerpo" class="hidden">
+    <div class="status"><span class="st" id="estado"></span><span class="who" id="quien"></span></div>
+    <section class="sec" style="margin-top:0">
+      <div class="bar">DETALLE DE LA SOLICITUD</div>
+      <div class="box" id="detalle"></div>
+    </section>
+
+    <section class="sec" id="secDecidir">
+      <div class="bar">6.- AUTORIZACIÓN DEL JEFE DIRECTO</div>
+      <div class="box">
+        <div class="decide">
+          <div class="abox">
+            <h4>JEFE DIRECTO</h4><p>Autorizo la incidencia conforme a la revisión de la documentación soporte.</p>
+            <div class="pad" id="padJ"><canvas></canvas><div class="ph">Firma aquí</div><button type="button" class="clr">Borrar</button></div>
+            <div class="cap">Nombre y firma del jefe directo</div>
+          </div>
+          <div class="fields">
+            <label class="f"><span>Tu nombre</span><input class="inp" id="nombreJefe" autocomplete="name"></label>
+            <label class="f"><span>Comentario <i>(obligatorio si rechazas)</i></span><textarea class="inp" id="comentario" rows="3" maxlength="400" style="line-height:1.45;padding-top:8px;background:#fff"></textarea></label>
+          </div>
+        </div>
+        <div class="actions">
+          <span class="msg" id="msg" role="alert"></span>
+          <button class="btn bad" id="btnRech" type="button">Rechazar</button>
+          <button class="btn ok" id="btnAut" type="button">Autorizar y firmar</button>
+        </div>
+      </div>
+    </section>
+
+    <div id="resultado" class="res hidden"></div>
+    <div class="actions" style="justify-content:center"><button class="btn ghost hidden" id="btnPdf" type="button">Descargar formato (PDF)</button></div>
+  </div>
+
+  <footer class="doc-foot">
+    <img src="pie-izq.png" alt="">
+    <div class="c">Código: RH-FM / FO-GR-08 / REV. 00<br>PAG. 1 DE 1</div>
+    <img class="r" src="pie-der.png" alt="">
+  </footer>
+</div></main>
+
+<script>
+(function () {
+  var $ = function (id) { return document.getElementById(id); };
+  var q = new URLSearchParams(location.search), folio = q.get('folio') || '', t = q.get('t') || '';
+  var sol = null, pad = null;
+  $('folio').textContent = folio || '—';
+
+  function mostrar(s) {
+    sol = s;
+    var st = INC.ESTADOS[s.estado] || { txt: s.estado, cls: '' };
+    $('estado').className = 'st ' + st.cls; $('estado').textContent = st.txt;
+    $('quien').textContent = 'Enviada ' + INC.fechaHora(s.fechaRegistro);
+    $('fsol').textContent = INC.fecha(s.fechaSolicitud);
+    $('detalle').innerHTML = INC.vista(s);
+    var pendiente = s.estado === 'pendiente_jefe';
+    $('secDecidir').classList.toggle('hidden', !pendiente);
+    $('btnPdf').classList.toggle('hidden', pendiente);
+    if (pendiente) {
+      if (!pad) {
+        pad = INC.firma($('padJ').querySelector('canvas'));
+        $('padJ').querySelector('.clr').onclick = function () { pad.limpiar(); };
+        $('padJ').querySelector('canvas').addEventListener('firma', function () { $('padJ').querySelector('.ph').classList.toggle('hidden', !pad.vacia()); });
+      }
+      if (!$('nombreJefe').value) $('nombreJefe').value = s.jefeNombre || '';
+      $('resultado').classList.add('hidden');
+    } else {
+      var r = $('resultado'); r.classList.remove('hidden');
+      var aut = s.jefeDecision === 'AUTORIZADA';
+      r.className = 'res ' + (s.estado === 'rechazada_jefe' ? 'bad' : 'ok');
+      r.innerHTML = '<h2>' + (s.estado === 'rechazada_jefe' ? 'Solicitud rechazada' : s.estado === 'cancelada' ? 'Solicitud cancelada' : 'Solicitud autorizada') + '</h2>' +
+        '<p>' + (s.jefeNombreFirma ? (aut ? 'Autorizada' : 'Atendida') + ' por <b>' + INC.esc(s.jefeNombreFirma) + '</b> el ' + INC.fechaHora(s.jefeFecha) + '.' : '') +
+        (s.jefeComentario ? '<br>Comentario: ' + INC.esc(s.jefeComentario) : '') +
+        (s.estado === 'registrada' ? '<br>Recursos Humanos ya la registró.' : aut ? '<br>Recursos Humanos fue notificado para registrarla.' : '') + '</p>';
+    }
+  }
+
+  if (!folio || !t) { $('cargando').classList.add('hidden'); $('error').classList.remove('hidden'); $('errTxt').textContent = 'La liga está incompleta. Ábrela directamente desde el correo.'; return; }
+
+  INC.api({ accion: 'verJefe', folio: folio, t: t }).then(function (r) {
+    $('cargando').classList.add('hidden');
+    if (!r.ok) { $('error').classList.remove('hidden'); $('errTxt').textContent = r.error || 'No se encontró la solicitud.'; return; }
+    $('cuerpo').classList.remove('hidden'); mostrar(r.solicitud);
+  }).catch(function () {
+    $('cargando').textContent = 'No se pudo conectar. Revisa tu conexión y recarga la página.';
+  });
+
+  function decidir(decision) {
+    var nombre = $('nombreJefe').value.trim(), com = $('comentario').value.trim();
+    $('msg').textContent = '';
+    if (!nombre) { $('msg').textContent = 'Escribe tu nombre.'; $('nombreJefe').focus(); return; }
+    if (decision === 'autorizar' && pad.vacia()) { $('msg').textContent = 'Firma para autorizar.'; return; }
+    if (decision === 'rechazar' && !com) { $('msg').textContent = 'Escribe el motivo del rechazo en el comentario.'; $('comentario').focus(); return; }
+    if (decision === 'rechazar' && !confirm('¿Rechazar la solicitud ' + folio + '?')) return;
+    var b = decision === 'autorizar' ? $('btnAut') : $('btnRech');
+    var txt = b.textContent; $('btnAut').disabled = $('btnRech').disabled = true; b.innerHTML = '<i class="spin"></i> Guardando…';
+    INC.api({ accion: 'decidirJefe', folio: folio, t: t, decision: decision, nombreJefe: nombre, comentario: com, firma: decision === 'autorizar' ? pad.exportar() : '' })
+      .then(function (r) {
+        if (r.solicitud) mostrar(r.solicitud);
+        if (!r.ok) $('msg').textContent = r.error || 'No se pudo guardar.';
+        else window.scrollTo({ top: 0, behavior: 'smooth' });
+      })
+      .catch(function () { $('msg').textContent = 'No se pudo guardar. Revisa tu conexión e intenta de nuevo.'; })
+      .finally(function () { $('btnAut').disabled = $('btnRech').disabled = false; b.textContent = txt; });
+  }
+  $('btnAut').onclick = function () { decidir('autorizar'); };
+  $('btnRech').onclick = function () { decidir('rechazar'); };
+  $('btnPdf').onclick = function () { INC.descargarPDF(sol); };
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,372 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Solicitud de Permisos e Incidencias · Grupo Firme</title>
+<meta name="description" content="Formato RH-FM / FO-GR-08 en línea">
+<link rel="icon" href="favicon.ico">
+<link rel="apple-touch-icon" href="apple-touch.png">
+<meta name="theme-color" content="#002060">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Source+Sans+3:ital,wght@0,400;0,600;0,700;0,800;1,400&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="inc.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js" defer></script>
+<script src="inc-core.js"></script>
+</head>
+<body>
+<main class="sheet"><div class="sheet-in">
+
+  <header class="doc-head">
+    <img class="logo" src="logo-firme.png" alt="Grupo Empresarial Firme">
+    <div class="doc-title">
+      <h1>SOLICITUD DE PERMISOS E INCIDENCIAS</h1>
+      <p>Este formato deberá ser llenado por el colaborador y entregado al jefe directo para su autorización</p>
+    </div>
+    <div class="date-box"><small>FECHA DE SOLICITUD:</small><strong id="fechaSol">—</strong><em>(DD / MM / AAAA)</em></div>
+  </header>
+
+  <form id="frm" novalidate>
+  <div id="vistaForm">
+
+    <div class="grid2">
+      <section class="sec">
+        <div class="bar">1.- DATOS DEL COLABORADOR</div>
+        <div class="box fields">
+          <label class="f"><span>Empresa</span>
+            <select class="inp" id="empresa" required><option value="">Selecciona…</option></select></label>
+          <label class="f"><span>Nombre completo</span><input class="inp" id="nombre" required autocomplete="name"></label>
+          <label class="f"><span>Puesto</span><input class="inp" id="puesto" required></label>
+          <label class="f"><span>Área / Departamento</span><input class="inp" id="area" required></label>
+          <div class="row">
+            <label class="f"><span>Fecha de ingreso</span><input class="inp" type="date" id="fechaIngreso"></label>
+            <label class="f"><span>Tu correo <i>(avisos)</i></span><input class="inp" type="email" id="correo" required autocomplete="email" inputmode="email"></label>
+          </div>
+        </div>
+      </section>
+
+      <section class="sec">
+        <div class="bar">2.- PERIODO DE LA INCIDENCIA</div>
+        <div class="box fields">
+          <div class="row">
+            <label class="f"><span>Fecha de inicio</span><input class="inp" type="date" id="fechaInicio" required></label>
+            <label class="f"><span>Hora de inicio</span><input class="inp" type="time" id="horaInicio"></label>
+          </div>
+          <div class="row">
+            <label class="f"><span>Fecha de fin</span><input class="inp" type="date" id="fechaFin"></label>
+            <label class="f"><span>Hora de fin</span><input class="inp" type="time" id="horaFin"></label>
+          </div>
+          <label class="f"><span>Fecha de reincorporación</span><input class="inp" type="date" id="fechaReincorporacion"></label>
+          <label class="f"><span>Total de días u horas</span><input class="inp" id="totalDiasHoras" placeholder="Se calcula solo; puedes corregirlo">
+            <div class="hint" id="totalHint"></div></label>
+        </div>
+      </section>
+    </div>
+
+    <section class="sec">
+      <div class="bar">3.- TIPO DE INCIDENCIA <small>Marque solo una opción</small></div>
+      <div class="tipos" id="tipos"></div>
+    </section>
+
+    <section class="sec">
+      <div class="bar">4.- MOTIVO <small>Descripción de la incidencia</small></div>
+      <div class="box" style="padding:0"><textarea class="inp" id="motivo" rows="3" maxlength="600" required placeholder="Describe brevemente el motivo…" style="border:0;width:100%"></textarea></div>
+    </section>
+
+    <section class="sec">
+      <div class="bar">5.- FORMA DE JUSTIFICACIÓN <small>Solo aplica en Asistencia, Permisos y Otras incidencias</small></div>
+      <div class="box">
+        <div id="justBox">
+          <div class="just" id="just">
+            <label class="opt"><input type="radio" name="just" value="CON GOCE DE SUELDO"><i class="ck"></i><b>Incidencia justificada con goce de sueldo</b></label>
+            <label class="opt"><input type="radio" name="just" value="SIN GOCE DE SUELDO"><i class="ck"></i><b>Incidencia justificada <u>sin goce</u> de sueldo</b></label>
+            <label class="opt"><input type="radio" name="just" value="OTRO"><i class="ck"></i><b>Otro</b></label>
+            <input class="inp hidden" id="justificacionOtro" placeholder="Especifica…" style="flex:1;min-width:200px">
+          </div>
+        </div>
+        <div class="na hidden" id="justNA">No aplica para vacaciones.</div>
+        <div class="drop" id="drop">
+          <button type="button" class="btn ghost sm" id="btnAdj">+ Adjuntar soporte</button>
+          <input type="file" id="fileIn" accept="image/*,application/pdf" multiple hidden>
+          <span class="hint" style="margin:0">Recetas médicas, incapacidad, cita del trámite, etc. · hasta 5 archivos (PDF o foto)</span>
+          <div class="files" id="files"></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="sec">
+      <div class="bar">6.- AUTORIZACIONES</div>
+      <div class="box auth">
+        <div class="abox">
+          <h4>COLABORADOR</h4><p>Declaro que la información proporcionada es verídica</p>
+          <div class="pad" id="padC"><canvas></canvas><div class="ph">Firma aquí con el dedo o el mouse</div><button type="button" class="clr">Borrar</button></div>
+          <div class="cap">Firma del colaborador</div>
+          <label class="decl"><input type="checkbox" id="declaro"> Declaro que la información proporcionada es verídica.</label>
+        </div>
+        <div class="abox">
+          <h4>JEFE DIRECTO</h4><p>Le llegará un correo para autorizar y firmar</p>
+          <div class="fields left">
+            <label class="f"><span>Nombre del jefe directo</span><input class="inp" id="jefeNombre" required></label>
+            <label class="f"><span>Correo del jefe directo</span><input class="inp" type="email" id="jefeCorreo" required inputmode="email"></label>
+          </div>
+        </div>
+        <div class="abox">
+          <h4>RECURSOS HUMANOS</h4><p>Recibido y registrado</p>
+          <div class="rh-wait">RH recibe y registra la solicitud cuando tu jefe la autoriza.</div>
+          <div class="cap">Nombre y firma de RH</div>
+        </div>
+      </div>
+    </section>
+
+    <div class="actions">
+      <span class="msg" id="msg" role="alert"></span>
+      <button type="submit" class="btn" id="btnEnviar">Enviar solicitud</button>
+    </div>
+  </div>
+  </form>
+
+  <section id="vistaOk" class="done hidden" aria-live="polite">
+    <div class="seal"></div>
+    <h2>Solicitud enviada</h2>
+    <div class="folio" id="okFolio">INC-00000</div>
+    <p id="okTxt"></p>
+    <div class="steps"><div class="on">Enviada</div><div>Jefe directo</div><div>Recursos Humanos</div></div>
+    <div class="actions" style="justify-content:center">
+      <button class="btn ghost" id="btnPdf" type="button">Descargar formato (PDF)</button>
+      <button class="btn" id="btnNueva" type="button">Nueva solicitud</button>
+    </div>
+  </section>
+
+  <footer class="doc-foot">
+    <img src="pie-izq.png" alt="CISA, Mupo, Atardecer, Grupo Firme">
+    <div class="c">Código: RH-FM / FO-GR-08 / REV. 00<br>PAG. 1 DE 1</div>
+    <img class="r" src="pie-der.png" alt="La Herencia, Grupo Santa Cruz, Santa Cruz, Vanguardia">
+  </footer>
+</div></main>
+
+<script>
+(function () {
+  var $ = function (id) { return document.getElementById(id); };
+  var GUARDA = 'inc_gfm_datos';
+  var adjuntos = []; // {nombre, data, tipo}
+  var totalManual = false;
+  var ultima = null;
+
+  $('fechaSol').textContent = INC.fecha(INC.hoy());
+  INC.EMPRESAS.forEach(function (e) { var o = document.createElement('option'); o.textContent = e; $('empresa').appendChild(o); });
+
+  /* Sección 3 */
+  INC.CATEGORIAS.forEach(function (c) {
+    var d = document.createElement('div'); d.className = 'cat'; d.dataset.cat = c.id;
+    var h = '<h3>' + c.id + '</h3><img src="' + c.icono + '" alt="">';
+    if (c.id === 'VACACIONES') {
+      h += '<div class="vac"><div class="tot">TOTAL DE DÍAS:</div><div class="num" id="vacNum">—</div>' +
+        '<div class="rng"><div><span>De:</span> <b id="vacDe">—</b></div><div><span>A:</span> <b id="vacA">—</b></div><div><span>Reincorporación:</span> <b id="vacRe">—</b></div></div>' +
+        '<label class="opt" style="justify-content:center;margin-top:8px"><input type="radio" name="tipo" value="VACACIONES|VACACIONES"><i class="ck"></i><b>Solicitar vacaciones</b></label>' +
+        '<div class="hint">Las fechas se toman del periodo (sección 2). Días hábiles de lunes a viernes; puedes corregir el total.</div></div>';
+    } else {
+      c.tipos.forEach(function (t) {
+        h += '<label class="opt"><input type="radio" name="tipo" value="' + c.id + '|' + t + '"><i class="ck"></i><b>' + t +
+          (t === 'PERMISOS SALIDAS FORÁNEOS' ? '<small>(' + INC.NOTA_FORANEOS + ')</small>' : '') + '</b></label>';
+      });
+      if (c.tipos.indexOf('OTRO') >= 0) h += '<div class="esp"><input class="inp esp-in" data-cat="' + c.id + '" placeholder="Especificar…" disabled></div>';
+    }
+    d.innerHTML = h; $('tipos').appendChild(d);
+  });
+
+  function sel() {
+    var r = document.querySelector('input[name=tipo]:checked');
+    if (!r) return null;
+    var p = r.value.split('|'); return { categoria: p[0], tipo: p[1] };
+  }
+  function pintarTipo() {
+    var s = sel();
+    document.querySelectorAll('.cat').forEach(function (c) { c.classList.toggle('on', !!s && c.dataset.cat === s.categoria); });
+    document.querySelectorAll('.esp-in').forEach(function (i) {
+      var on = !!s && s.categoria === i.dataset.cat && s.tipo === 'OTRO';
+      i.disabled = !on; if (!on) i.value = '';
+    });
+    var vac = !!s && s.categoria === 'VACACIONES';
+    $('justBox').classList.toggle('hidden', vac); $('justNA').classList.toggle('hidden', !vac);
+    calcular();
+  }
+  document.addEventListener('change', function (e) { if (e.target.name === 'tipo') { pintarTipo(); var i = document.querySelector('.esp-in:not([disabled])'); if (i) i.focus(); } });
+
+  document.querySelectorAll('input[name=just]').forEach(function (r) {
+    r.addEventListener('change', function () {
+      var otro = r.value === 'OTRO' && r.checked;
+      $('justificacionOtro').classList.toggle('hidden', !otro); if (otro) $('justificacionOtro').focus();
+    });
+  });
+
+  /* Totales */
+  function calcular() {
+    var a = $('fechaInicio').value, b = $('fechaFin').value || a, hi = $('horaInicio').value, hf = $('horaFin').value;
+    var s = sel(), txt = '', hint = '';
+    if (a && hi && hf && (!$('fechaFin').value || $('fechaFin').value === a) && !(s && s.categoria === 'VACACIONES')) {
+      var m = (+hf.slice(0, 2) * 60 + +hf.slice(3)) - (+hi.slice(0, 2) * 60 + +hi.slice(3));
+      if (m > 0) { txt = (Math.floor(m / 60) ? Math.floor(m / 60) + ' h ' : '') + (m % 60 ? (m % 60) + ' min' : '').trim(); txt = txt.trim(); hint = 'Calculado con las horas de inicio y fin'; }
+    } else if (a) {
+      var n = INC.diasHabiles(a, b);
+      if (n) { txt = n + (n === 1 ? ' día' : ' días'); hint = 'Días hábiles de lunes a viernes'; }
+    }
+    if (!totalManual) $('totalDiasHoras').value = txt;
+    $('totalHint').textContent = totalManual ? 'Total capturado a mano' : hint;
+    var dias = INC.diasHabiles(a, b);
+    $('vacNum').textContent = s && s.categoria === 'VACACIONES' ? (parseInt($('totalDiasHoras').value, 10) || dias || '—') : (dias || '—');
+    $('vacDe').textContent = INC.fecha(a) || '—'; $('vacA').textContent = INC.fecha(b) || '—';
+    $('vacRe').textContent = INC.fecha($('fechaReincorporacion').value) || '—';
+  }
+  ['fechaInicio', 'fechaFin', 'horaInicio', 'horaFin', 'fechaReincorporacion'].forEach(function (id) { $(id).addEventListener('input', calcular); });
+  $('totalDiasHoras').addEventListener('input', function () { totalManual = !!this.value.trim(); calcular(); });
+  $('fechaInicio').addEventListener('change', function () {
+    if ($('fechaFin').value && $('fechaFin').value < this.value) $('fechaFin').value = this.value;
+    $('fechaFin').min = this.value; $('fechaReincorporacion').min = this.value; calcular();
+  });
+
+  /* Firma */
+  var pad = INC.firma($('padC').querySelector('canvas'));
+  $('padC').querySelector('.clr').onclick = function () { pad.limpiar(); };
+  $('padC').querySelector('canvas').addEventListener('firma', function () { $('padC').querySelector('.ph').classList.toggle('hidden', !pad.vacia()); });
+
+  /* Adjuntos */
+  function pintarAdj() {
+    $('files').innerHTML = adjuntos.map(function (a, i) {
+      var th = a.tipo.indexOf('image/') === 0 ? '<img src="' + a.data + '" alt="">' : '<div class="pdf">PDF</div>';
+      return '<div class="file">' + th + '<span title="' + INC.esc(a.nombre) + '">' + INC.esc(a.nombre) + '</span><button type="button" data-i="' + i + '" aria-label="Quitar">×</button></div>';
+    }).join('');
+  }
+  $('files').onclick = function (e) { var b = e.target.closest('button[data-i]'); if (b) { adjuntos.splice(+b.dataset.i, 1); pintarAdj(); } };
+  $('btnAdj').onclick = function () { $('fileIn').click(); };
+  function agregar(lista) {
+    var arr = Array.prototype.slice.call(lista);
+    var p = arr.map(function (f) {
+      if (adjuntos.length >= 5) return Promise.resolve(toast('Máximo 5 archivos'));
+      if (f.type === 'application/pdf') {
+        if (f.size > 6 * 1024 * 1024) return Promise.resolve(toast(f.name + ': el PDF pesa más de 6 MB'));
+        return INC.leerArchivo(f).then(function (d) { if (adjuntos.length < 5) adjuntos.push({ nombre: f.name, data: d, tipo: f.type }); });
+      }
+      if (f.type.indexOf('image/') === 0) return INC.comprimirImagen(f, 1800, 0.78).then(function (d) {
+        if (adjuntos.length < 5) adjuntos.push({ nombre: f.name.replace(/\.[^.]+$/, '') + '.jpg', data: d, tipo: 'image/jpeg' });
+      });
+      return Promise.resolve(toast(f.name + ': solo PDF o imagen'));
+    });
+    Promise.all(p).then(pintarAdj);
+  }
+  $('fileIn').onchange = function () { agregar(this.files); this.value = ''; };
+  var drop = $('drop');
+  ['dragenter', 'dragover'].forEach(function (t) { drop.addEventListener(t, function (e) { e.preventDefault(); drop.classList.add('over'); }); });
+  ['dragleave', 'drop'].forEach(function (t) { drop.addEventListener(t, function (e) { e.preventDefault(); drop.classList.remove('over'); }); });
+  drop.addEventListener('drop', function (e) { agregar(e.dataTransfer.files); });
+
+  function toast(t) {
+    var d = document.createElement('div'); d.className = 'toast'; d.textContent = t; document.body.appendChild(d);
+    setTimeout(function () { d.remove(); }, 3200);
+  }
+
+  /* Datos recordados en este navegador */
+  var CAMPOS_RECORDADOS = ['empresa', 'nombre', 'puesto', 'area', 'fechaIngreso', 'correo', 'jefeNombre', 'jefeCorreo'];
+  try {
+    var g = JSON.parse(localStorage.getItem(GUARDA) || 'null');
+    if (g) CAMPOS_RECORDADOS.forEach(function (k) { if (g[k]) $(k).value = g[k]; });
+  } catch (e) {}
+
+  function limpiaErr(e) {
+    var t = e.target; if (!t.closest) return;
+    t.classList.remove('err');
+    ['#tipos', '#just', '.decl'].forEach(function (q) { var c = t.closest(q); if (c) c.classList.remove('err'); });
+    if (t.name === 'tipo') document.querySelectorAll('#tipos .err').forEach(function (x) { x.classList.remove('err'); });
+  }
+  document.addEventListener('input', limpiaErr); document.addEventListener('change', limpiaErr);
+  $('padC').querySelector('canvas').addEventListener('firma', function () { $('padC').classList.remove('err'); });
+
+  /* Validación y envío */
+  var mailRe = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
+  function validar() {
+    document.querySelectorAll('.err').forEach(function (e) { e.classList.remove('err'); });
+    var errores = [];
+    function marca(id, txt) { var el = $(id); if (el) el.classList.add('err'); errores.push({ el: el, txt: txt }); }
+    ['empresa', 'nombre', 'puesto', 'area'].forEach(function (k) { if (!$(k).value.trim()) marca(k, 'Completa los datos del colaborador'); });
+    if (!mailRe.test($('correo').value.trim())) marca('correo', 'Escribe tu correo');
+    if (!$('fechaInicio').value) marca('fechaInicio', 'Indica la fecha de inicio');
+    if ($('fechaFin').value && $('fechaFin').value < $('fechaInicio').value) marca('fechaFin', 'La fecha de fin es anterior a la de inicio');
+    var s = sel();
+    if (!s) { $('tipos').classList.add('err'); errores.push({ el: $('tipos'), txt: 'Marca el tipo de incidencia' }); }
+    else if (s.tipo === 'OTRO') { var es = document.querySelector('.esp-in:not([disabled])'); if (!es.value.trim()) { es.classList.add('err'); errores.push({ el: es, txt: 'Especifica el tipo de incidencia' }); } }
+    if (!$('motivo').value.trim()) marca('motivo', 'Describe el motivo');
+    if (s && s.categoria !== 'VACACIONES') {
+      var j = document.querySelector('input[name=just]:checked');
+      if (!j) { $('just').classList.add('err'); errores.push({ el: $('just'), txt: 'Elige la forma de justificación' }); }
+      else if (j.value === 'OTRO' && !$('justificacionOtro').value.trim()) marca('justificacionOtro', 'Especifica la forma de justificación');
+    }
+    if (pad.vacia()) { $('padC').classList.add('err'); errores.push({ el: $('padC'), txt: 'Falta tu firma' }); }
+    if (!$('declaro').checked) { $('declaro').closest('.decl').classList.add('err'); errores.push({ el: $('declaro'), txt: 'Marca la declaración de veracidad' }); }
+    if (!$('jefeNombre').value.trim()) marca('jefeNombre', 'Escribe el nombre de tu jefe directo');
+    if (!mailRe.test($('jefeCorreo').value.trim())) marca('jefeCorreo', 'Escribe el correo de tu jefe directo');
+    else if ($('jefeCorreo').value.trim().toLowerCase() === $('correo').value.trim().toLowerCase()) marca('jefeCorreo', 'El correo del jefe no puede ser el tuyo');
+    return errores;
+  }
+
+  function armar() {
+    var s = sel(), j = document.querySelector('input[name=just]:checked'), vac = s.categoria === 'VACACIONES';
+    var es = document.querySelector('.esp-in:not([disabled])');
+    var total = $('totalDiasHoras').value.trim();
+    return {
+      fechaSolicitud: INC.hoy(),
+      empresa: $('empresa').value, nombre: $('nombre').value.trim(), puesto: $('puesto').value.trim(), area: $('area').value.trim(),
+      fechaIngreso: $('fechaIngreso').value, correo: $('correo').value.trim().toLowerCase(),
+      jefeNombre: $('jefeNombre').value.trim(), jefeCorreo: $('jefeCorreo').value.trim().toLowerCase(),
+      totalDiasHoras: total, fechaInicio: $('fechaInicio').value, horaInicio: $('horaInicio').value,
+      fechaFin: $('fechaFin').value, horaFin: $('horaFin').value, fechaReincorporacion: $('fechaReincorporacion').value,
+      categoria: s.categoria, tipo: s.tipo, especificar: es ? es.value.trim() : '',
+      vacDias: vac ? (parseInt(total, 10) || INC.diasHabiles($('fechaInicio').value, $('fechaFin').value || $('fechaInicio').value)) : '',
+      motivo: $('motivo').value.trim(),
+      justificacion: vac ? '' : j.value, justificacionOtro: !vac && j.value === 'OTRO' ? $('justificacionOtro').value.trim() : '',
+      firmaColaborador: pad.exportar(),
+      adjuntos: adjuntos.map(function (a) { return { nombre: a.nombre, data: a.data }; })
+    };
+  }
+
+  $('frm').addEventListener('submit', function (e) {
+    e.preventDefault();
+    var err = validar();
+    if (err.length) {
+      $('msg').textContent = err[0].txt + (err.length > 1 ? ' (y ' + (err.length - 1) + ' más)' : '');
+      if (err[0].el) { err[0].el.scrollIntoView({ behavior: 'smooth', block: 'center' }); if (err[0].el.focus) setTimeout(function () { err[0].el.focus({ preventScroll: true }); }, 350); }
+      return;
+    }
+    $('msg').textContent = '';
+    var datos = armar();
+    var b = $('btnEnviar'); b.disabled = true; b.innerHTML = '<i class="spin"></i> Enviando…';
+    INC.api({ accion: 'crear', solicitud: datos }).then(function (r) {
+      if (!r || !r.ok) throw new Error(r && r.error || 'Sin respuesta');
+      try { var g = {}; CAMPOS_RECORDADOS.forEach(function (k) { g[k] = $(k).value; }); localStorage.setItem(GUARDA, JSON.stringify(g)); } catch (x) {}
+      datos.folio = r.folio; datos.fechaRegistro = new Date(Date.now() - new Date().getTimezoneOffset() * 60000).toISOString().slice(0, 19);
+      datos.adjuntos = adjuntos.map(function (a) { return { nombre: a.nombre }; });
+      ultima = datos;
+      $('okFolio').textContent = r.folio;
+      $('okTxt').innerHTML = 'Le enviamos un correo a <b>' + INC.esc(datos.jefeNombre) + '</b> para que la autorice. Te avisaremos a <b>' + INC.esc(datos.correo) + '</b> en cada paso. Guarda tu folio para cualquier aclaración.';
+      $('vistaForm').classList.add('hidden'); $('vistaOk').classList.remove('hidden');
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }).catch(function (x) {
+      $('msg').textContent = 'No se pudo enviar: ' + x.message + '. Revisa tu conexión e inténtalo de nuevo.';
+    }).finally(function () { b.disabled = false; b.textContent = 'Enviar solicitud'; });
+  });
+
+  $('btnPdf').onclick = function () {
+    var b = this; b.disabled = true;
+    INC.descargarPDF(ultima).catch(function () { toast('No se pudo generar el PDF'); }).finally(function () { b.disabled = false; });
+  };
+  $('btnNueva').onclick = function () {
+    ['fechaInicio', 'fechaFin', 'horaInicio', 'horaFin', 'fechaReincorporacion', 'totalDiasHoras', 'motivo', 'justificacionOtro'].forEach(function (k) { $(k).value = ''; });
+    document.querySelectorAll('input[name=tipo],input[name=just]').forEach(function (r) { r.checked = false; });
+    $('declaro').checked = false; pad.limpiar(); adjuntos = []; pintarAdj(); totalManual = false; pintarTipo();
+    $('justificacionOtro').classList.add('hidden');
+    $('vistaOk').classList.add('hidden'); $('vistaForm').classList.remove('hidden'); window.scrollTo(0, 0); pad.ajustar();
+  };
+
+  pintarTipo();
+})();
+</script>
+</body>
+</html>
