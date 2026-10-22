@@ -208,9 +208,10 @@
     if (!totalManual) $('totalDiasHoras').value = vac && dias ? dias + (dias === 1 ? ' día' : ' días') : '';
     $('totalDiasHoras').placeholder = vac ? 'Se calcula con las fechas; puedes corregirlo' : 'Escribe el total (ej. 1 día, 3 horas)';
     $('totalHint').textContent = vac ? (totalManual ? 'Total capturado a mano' : (dias ? 'Días de lunes a sábado (sin domingos)' : '')) : '';
-    $('vacNum').textContent = vac ? (parseInt($('totalDiasHoras').value, 10) || dias || '—') : (dias || '—');
-    $('vacDe').textContent = INC.fecha(a) || '—'; $('vacA').textContent = INC.fecha(b) || '—';
-    $('vacRe').textContent = INC.fecha($('fechaReincorporacion').value) || '—';
+    // La tarjeta de vacaciones solo se llena cuando el motivo es vacaciones.
+    $('vacNum').textContent = vac ? (parseInt($('totalDiasHoras').value, 10) || dias || '—') : '—';
+    $('vacDe').textContent = vac && a ? INC.fecha(a) : '—'; $('vacA').textContent = vac && a ? INC.fecha(b) : '—';
+    $('vacRe').textContent = vac && $('fechaReincorporacion').value ? INC.fecha($('fechaReincorporacion').value) : '—';
   }
   ['fechaInicio', 'fechaFin', 'horaInicio', 'horaFin', 'fechaReincorporacion'].forEach(function (id) { $(id).addEventListener('input', calcular); });
   $('totalDiasHoras').addEventListener('input', function () { totalManual = !!this.value.trim(); calcular(); });
