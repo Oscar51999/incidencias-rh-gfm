@@ -52,11 +52,11 @@
     var d = new Date(); d.setMinutes(d.getMinutes() - d.getTimezoneOffset());
     return d.toISOString().slice(0, 10);
   };
-  INC.diasHabiles = function (a, b) { // lunes a viernes, inclusivo
+  INC.diasHabiles = function (a, b) { // lunes a sábado (sin domingos), inclusivo
     if (!a || !b) return 0;
     var d = new Date(a + 'T12:00:00'), f = new Date(b + 'T12:00:00'), n = 0;
     if (f < d) return 0;
-    while (d <= f) { var w = d.getDay(); if (w !== 0 && w !== 6) n++; d.setDate(d.getDate() + 1); }
+    while (d <= f) { var w = d.getDay(); if (w !== 0) n++; d.setDate(d.getDate() + 1); }
     return n;
   };
   INC.esc = function (s) {

@@ -57,7 +57,7 @@
             <label class="f"><span>Hora de fin</span><input class="inp" type="time" id="horaFin"></label>
           </div>
           <label class="f"><span>Fecha de reincorporación</span><input class="inp" type="date" id="fechaReincorporacion"></label>
-          <label class="f"><span>Total de días u horas</span><input class="inp" id="totalDiasHoras" placeholder="Se calcula solo; puedes corregirlo">
+          <label class="f"><span>Total de días u horas</span><input class="inp" id="totalDiasHoras" placeholder="Escribe el total (ej. 1 día, 3 horas)">
             <div class="hint" id="totalHint"></div></label>
         </div>
       </section>
@@ -201,19 +201,14 @@
 
   /* Totales */
   function calcular() {
-    var a = $('fechaInicio').value, b = $('fechaFin').value || a, hi = $('horaInicio').value, hf = $('horaFin').value;
-    var s = sel(), txt = '', hint = '';
-    if (a && hi && hf && (!$('fechaFin').value || $('fechaFin').value === a) && !(s && s.categoria === 'VACACIONES')) {
-      var m = (+hf.slice(0, 2) * 60 + +hf.slice(3)) - (+hi.slice(0, 2) * 60 + +hi.slice(3));
-      if (m > 0) { txt = (Math.floor(m / 60) ? Math.floor(m / 60) + ' h ' : '') + (m % 60 ? (m % 60) + ' min' : '').trim(); txt = txt.trim(); hint = 'Calculado con las horas de inicio y fin'; }
-    } else if (a) {
-      var n = INC.diasHabiles(a, b);
-      if (n) { txt = n + (n === 1 ? ' día' : ' días'); hint = 'Días hábiles de lunes a viernes'; }
-    }
-    if (!totalManual) $('totalDiasHoras').value = txt;
-    $('totalHint').textContent = totalManual ? 'Total capturado a mano' : hint;
+    var a = $('fechaInicio').value, b = $('fechaFin').value || a;
+    var s = sel(), vac = !!s && s.categoria === 'VACACIONES';
     var dias = INC.diasHabiles(a, b);
-    $('vacNum').textContent = s && s.categoria === 'VACACIONES' ? (parseInt($('totalDiasHoras').value, 10) || dias || '—') : (dias || '—');
+    // Solo en vacaciones se calcula el total; en lo demás lo escribe el colaborador.
+    if (!totalManual) $('totalDiasHoras').value = vac && dias ? dias + (dias === 1 ? ' día' : ' días') : '';
+    $('totalDiasHoras').placeholder = vac ? 'Se calcula con las fechas; puedes corregirlo' : 'Escribe el total (ej. 1 día, 3 horas)';
+    $('totalHint').textContent = vac ? (totalManual ? 'Total capturado a mano' : (dias ? 'Días de lunes a sábado (sin domingos)' : '')) : '';
+    $('vacNum').textContent = vac ? (parseInt($('totalDiasHoras').value, 10) || dias || '—') : (dias || '—');
     $('vacDe').textContent = INC.fecha(a) || '—'; $('vacA').textContent = INC.fecha(b) || '—';
     $('vacRe').textContent = INC.fecha($('fechaReincorporacion').value) || '—';
   }
