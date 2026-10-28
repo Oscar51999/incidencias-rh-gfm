@@ -1,0 +1,136 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Mi solicitud · Incidencias · Grupo Firme</title>
+<meta name="robots" content="noindex">
+<link rel="icon" href="favicon.ico">
+<meta name="theme-color" content="#002060">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Source+Sans+3:ital,wght@0,400;0,600;0,700;0,800;1,400&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="inc.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js" defer></script>
+<script src="inc-core.js"></script>
+<style>
+.status{display:flex;align-items:center;gap:12px;justify-content:space-between;flex-wrap:wrap;margin-bottom:14px}
+.status .who{font-size:14px;color:var(--ink-2)}
+.load{padding:60px 0;text-align:center;color:var(--ink-3)}
+.res{padding:22px 18px 6px;text-align:center}
+.res h2{margin:0 0 6px;font-size:22px}
+.res p{margin:4px auto;color:var(--ink-2);max-width:560px}
+.res.ok h2{color:var(--ok)} .res.bad h2{color:var(--bad)} .res.wait h2{color:var(--warn)}
+.dl{display:flex;justify-content:center;margin:16px 0 4px}
+.dl .btn{font-size:16px;padding:14px 26px}
+.firmas{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+.fb{border:1.2px solid var(--ink);padding:10px;text-align:center;font-size:12.5px}
+.fb h5{margin:0;color:var(--navy);font-size:13px;letter-spacing:.04em}
+.fb .img{height:70px;display:grid;place-items:center;border-bottom:1px solid var(--ink);margin:6px 0 4px}
+.fb .img img{max-height:64px;max-width:100%}
+.fb .img .stamp{font-weight:800;letter-spacing:.05em}
+.fb b{display:block}
+.fb span{color:var(--ink-3);font-size:11.5px}
+@media (max-width:720px){.firmas{grid-template-columns:1fr}}
+</style>
+<meta name="author" content="Oscar Cota Latorre">
+<meta name="copyright" content="© 2026 Oscar Cota Latorre">
+</head>
+<body>
+<main class="sheet"><div class="sheet-in">
+  <header class="doc-head">
+    <img class="logo" src="logo-firme.png" alt="Grupo Empresarial Firme">
+    <div class="doc-title">
+      <h1>SOLICITUD DE PERMISOS E INCIDENCIAS</h1>
+      <p>Consulta y descarga de tu solicitud</p>
+    </div>
+    <div class="date-box"><small>FOLIO</small><strong id="folio">—</strong><em id="fsol">&nbsp;</em></div>
+  </header>
+
+  <div id="cargando" class="load">Cargando tu solicitud…</div>
+  <div id="error" class="res bad hidden"><h2>Liga no válida</h2><p id="errTxt"></p></div>
+
+  <div id="cuerpo" class="hidden">
+    <div id="resultado" class="res"></div>
+    <div class="dl"><button class="btn" id="btnPdf" type="button">⬇ Descargar formato (PDF)</button></div>
+
+    <div class="status" style="margin-top:20px"><span class="st" id="estado"></span><span class="who" id="quien"></span></div>
+    <section class="sec" style="margin-top:0">
+      <div class="bar">DETALLE DE LA SOLICITUD</div>
+      <div class="box" id="detalle"></div>
+    </section>
+    <section class="sec">
+      <div class="bar">6.- AUTORIZACIONES</div>
+      <div class="box firmas" id="firmas"></div>
+    </section>
+  </div>
+
+  <footer class="doc-foot">
+    <img src="pie-izq.png" alt="">
+    <div class="c">Código: RH-FM / FO-GR-08 / REV. 00<br>PAG. 1 DE 1</div>
+    <img class="r" src="pie-der.png" alt="">
+  </footer>
+</div></main>
+
+<script>
+(function () {
+  var $ = function (id) { return document.getElementById(id); };
+  var q = new URLSearchParams(location.search), folio = q.get('folio') || '', t = q.get('t') || '';
+  var sol = null;
+  $('folio').textContent = folio || '—';
+
+  function caja(titulo, img, sello, nombre, pie, fecha) {
+    return '<div class="fb"><h5>' + titulo + '</h5><div class="img">' + (img ? '<img src="' + img + '" alt="Firma">' : (sello || '')) + '</div>' +
+      '<b>' + INC.esc(nombre || '—') + '</b><span>' + pie + (fecha ? ' · ' + INC.fechaHora(fecha) : '') + '</span></div>';
+  }
+
+  function mostrar(s) {
+    sol = s;
+    var st = INC.ESTADOS[s.estado] || { txt: s.estado, cls: '' };
+    $('estado').className = 'st ' + st.cls; $('estado').textContent = st.txt;
+    $('quien').textContent = 'Enviada ' + INC.fechaHora(s.fechaRegistro);
+    $('fsol').textContent = INC.fecha(s.fechaSolicitud);
+    $('detalle').innerHTML = INC.vista(s);
+
+    var aut = s.jefeDecision === 'AUTORIZADA', r = $('resultado'), h, p;
+    if (s.estado === 'registrada') { r.className = 'res ok'; h = 'Solicitud autorizada y registrada'; p = 'Firmada por tu jefe directo (' + INC.esc(s.jefeNombreFirma) + ') y registrada por Recursos Humanos.'; }
+    else if (s.estado === 'autorizada_jefe') { r.className = 'res ok'; h = 'Solicitud autorizada'; p = 'Firmada por tu jefe directo (' + INC.esc(s.jefeNombreFirma) + ') el ' + INC.fechaHora(s.jefeFecha) + '. Recursos Humanos la registrará.'; }
+    else if (s.estado === 'rechazada_jefe') { r.className = 'res bad'; h = 'Solicitud no autorizada'; p = 'Tu jefe directo la rechazó.' + (s.jefeComentario ? ' Motivo: ' + INC.esc(s.jefeComentario) : ''); }
+    else if (s.estado === 'cancelada') { r.className = 'res bad'; h = 'Solicitud cancelada'; p = 'Recursos Humanos canceló esta solicitud.'; }
+    else { r.className = 'res wait'; h = 'Pendiente de autorización'; p = 'Tu jefe directo aún no la firma. Puedes descargar el formato, pero todavía no lleva su firma.'; }
+    r.innerHTML = '<h2>' + h + '</h2><p>' + p + '</p>';
+    $('btnPdf').textContent = aut ? '⬇ Descargar solicitud firmada (PDF)' : '⬇ Descargar formato (PDF)';
+
+    $('firmas').innerHTML =
+      caja('COLABORADOR', s.firmaColaborador, '', s.nombre, 'Firma del colaborador', s.fechaRegistro) +
+      caja('JEFE DIRECTO', s.jefeFirma, s.jefeDecision === 'RECHAZADA' ? '<span class="stamp" style="color:var(--bad)">RECHAZADA</span>' : '<span style="color:var(--ink-3)">Pendiente</span>',
+        s.jefeNombreFirma || s.jefeNombre, 'Nombre y firma del jefe directo', s.jefeFecha) +
+      caja('RECURSOS HUMANOS', '', s.rhUsuario ? '<span class="stamp" style="color:var(--navy)">RECIBIDO Y REGISTRADO</span>' : '<span style="color:var(--ink-3)">Pendiente</span>',
+        s.rhUsuario, 'Nombre y firma de RH', s.rhFecha);
+  }
+
+  if (!folio || !t) {
+    $('cargando').classList.add('hidden'); $('error').classList.remove('hidden');
+    $('errTxt').textContent = 'La liga está incompleta. Ábrela directamente desde el correo que recibiste.';
+    return;
+  }
+
+  INC.api({ accion: 'verColaborador', folio: folio, t: t }).then(function (r) {
+    $('cargando').classList.add('hidden');
+    if (!r.ok) { $('error').classList.remove('hidden'); $('errTxt').textContent = r.error || 'No se encontró la solicitud.'; return; }
+    $('cuerpo').classList.remove('hidden'); mostrar(r.solicitud);
+  }).catch(function () {
+    $('cargando').textContent = 'No se pudo conectar. Revisa tu conexión y recarga la página.';
+  });
+
+  $('btnPdf').onclick = function () {
+    var b = this, txt = b.textContent; b.disabled = true; b.innerHTML = '<i class="spin"></i> Generando…';
+    INC.descargarPDF(sol).catch(function () { alert('No se pudo generar el PDF. Intenta de nuevo.'); })
+      .finally(function () { b.disabled = false; b.textContent = txt; });
+  };
+})();
+</script>
+
+<!-- © 2026 Oscar Cota Latorre. Todos los derechos reservados. -->
+<div id="ocl-c" aria-hidden="true" style="position:fixed;right:4px;bottom:1px;z-index:2147483647;font:6px/1 Arial,sans-serif;letter-spacing:.2px;color:#8a8a8a;opacity:.3;pointer-events:none;user-select:none;-webkit-user-select:none;white-space:nowrap">© 2026 Oscar Cota Latorre</div>
+</body>
+</html>
